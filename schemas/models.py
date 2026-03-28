@@ -163,3 +163,127 @@ class CompetitivePositionOutput(BaseToolOutput):
     differentiation_summary: str = Field(
         description="Summary of your competitive differentiation"
     )
+
+
+# ---------------------------------------------------------------------------
+# Business Model Canvas Review (Phase 2)
+# ---------------------------------------------------------------------------
+
+class BmcComponentAssessment(BaseModel):
+    """Assessment of a single BMC component."""
+    component: str = Field(description="BMC component name")
+    provided: str = Field(description="What was provided for this component")
+    strength: Literal["Strong", "Adequate", "Weak", "Missing"] = Field(
+        description="How well-defined this component is"
+    )
+    feedback: str = Field(description="Specific feedback on this component")
+
+
+class BusinessModelReviewOutput(BaseToolOutput):
+    """Output for the business model canvas review tool."""
+    product_name: str
+    component_assessments: list[BmcComponentAssessment] = Field(
+        description="Assessment of each BMC component"
+    )
+    overall_health: Literal["Strong", "Viable", "Gaps Present", "Incomplete"] = Field(
+        description="Overall business model health"
+    )
+    critical_gaps: list[str] = Field(
+        description="Components that need the most attention"
+    )
+    strongest_elements: list[str] = Field(
+        description="Components that are well-defined"
+    )
+    coherence_notes: str = Field(
+        description="How well the components fit together"
+    )
+
+
+# ---------------------------------------------------------------------------
+# TAM/SAM/SOM (Phase 2)
+# ---------------------------------------------------------------------------
+
+class MarketTier(BaseModel):
+    """A single market tier estimate."""
+    tier: Literal["TAM", "SAM", "SOM"] = Field(description="Market tier")
+    estimate_usd: str = Field(description="Estimated market size in USD")
+    reasoning: str = Field(description="How this estimate was derived")
+
+
+class TamSamSomOutput(BaseToolOutput):
+    """Output for the TAM/SAM/SOM market sizing tool."""
+    product_name: str
+    industry: str
+    tiers: list[MarketTier] = Field(description="TAM, SAM, and SOM estimates")
+    methodology: str = Field(
+        description="Which estimation approach was used (top-down, bottom-up, or hybrid)"
+    )
+    key_assumptions: list[str] = Field(
+        description="Critical assumptions behind the estimates"
+    )
+    sanity_checks: list[str] = Field(
+        description="Reality checks on the estimates"
+    )
+
+
+# ---------------------------------------------------------------------------
+# OKR Generator (Phase 2)
+# ---------------------------------------------------------------------------
+
+class KeyResult(BaseModel):
+    """A single key result within an OKR."""
+    key_result: str = Field(description="The measurable key result statement")
+    metric: str = Field(description="What metric is being measured")
+    baseline: str = Field(description="Current/starting value")
+    target: str = Field(description="Target value to achieve")
+    rationale: str = Field(description="Why this KR matters for the objective")
+
+
+class OkrGeneratorOutput(BaseToolOutput):
+    """Output for the OKR generator tool."""
+    objective: str = Field(description="The well-formed objective statement")
+    objective_quality_notes: str = Field(
+        description="Assessment of objective quality (aspirational, clear, time-bound)"
+    )
+    key_results: list[KeyResult] = Field(
+        description="3-5 measurable key results"
+    )
+    time_horizon: str = Field(description="The time period for this OKR")
+    alignment_notes: str = Field(
+        description="How this OKR connects to broader strategy"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Pricing Strategy (Phase 2)
+# ---------------------------------------------------------------------------
+
+class CompetitorPricing(BaseModel):
+    """A competitor's pricing for comparison."""
+    name: str
+    price_point: str
+    model: str = Field(description="Their pricing model (subscription, usage, one-time, etc.)")
+    notes: str = Field(default="")
+
+
+class PricingStrategyOutput(BaseToolOutput):
+    """Output for the pricing strategy analysis tool."""
+    product_name: str
+    recommended_model: str = Field(
+        description="Recommended pricing model (e.g., freemium, tiered subscription, usage-based)"
+    )
+    recommended_price_range: str = Field(
+        description="Suggested price range with reasoning"
+    )
+    value_metric: str = Field(
+        description="The unit of value the price should be anchored to"
+    )
+    positioning_alignment: str = Field(
+        description="How pricing aligns with product positioning"
+    )
+    competitor_comparison: list[CompetitorPricing] = Field(
+        description="How competitors price their products"
+    )
+    pricing_risks: list[str] = Field(
+        description="Risks with the recommended pricing approach"
+    )

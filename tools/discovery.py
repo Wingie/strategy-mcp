@@ -233,7 +233,20 @@ def jobs_to_be_done(
         outcomes_text = f"achieve {desired_outcomes[0]}"
     else:
         outcomes_text = "get the job done more effectively"
-    job_statement = f"When {context}, {target_user} want to {feature_or_problem}, so they can {outcomes_text}."
+    # Ensure the feature/problem reads as a verb phrase in the job statement.
+    # If it doesn't start with a verb-like word, prepend "get" for natural grammar.
+    verb_starters = ("get ", "find ", "create ", "build ", "make ", "use ", "run ",
+                     "set ", "do ", "have ", "achieve ", "reduce ", "increase ",
+                     "improve ", "manage ", "track ", "analyze ", "understand ",
+                     "prioritize ", "validate ", "test ", "launch ", "deploy ",
+                     "automate ", "generate ", "identify ", "evaluate ", "assess ")
+    fp_lower = feature_or_problem.lower().strip()
+    if not any(fp_lower.startswith(v) for v in verb_starters):
+        feature_verb = f"get {feature_or_problem}"
+    else:
+        feature_verb = feature_or_problem
+
+    job_statement = f"When {context}, {target_user} want to {feature_verb}, so they can {outcomes_text}."
 
     # Derive functional job (the practical task)
     functional_job = (
