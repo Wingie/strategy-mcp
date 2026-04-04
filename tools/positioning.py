@@ -8,7 +8,7 @@ import math
 from typing import Annotated
 from pydantic import Field
 
-from server import mcp
+from app import mcp
 from schemas.models import (
     CompetitorInput,
     ProductPosition,

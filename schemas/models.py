@@ -287,3 +287,138 @@ class PricingStrategyOutput(BaseToolOutput):
     pricing_risks: list[str] = Field(
         description="Risks with the recommended pricing approach"
     )
+
+
+# ---------------------------------------------------------------------------
+# Wardley Assessment (Phase 3)
+# ---------------------------------------------------------------------------
+
+class WardleyComponent(BaseModel):
+    """A single component assessed on the evolution axis."""
+    name: str = Field(description="Component name")
+    stage: Literal["Genesis", "Custom-Built", "Product", "Commodity"] = Field(
+        description="Current evolution stage"
+    )
+    stage_reasoning: str = Field(description="Why this component is at this stage")
+    movement: Literal["Evolving", "Stable", "Uncertain"] = Field(
+        description="Whether this component is actively evolving"
+    )
+    strategic_implications: str = Field(
+        description="What this means for your strategy"
+    )
+
+
+class WardleyAssessmentOutput(BaseToolOutput):
+    """Output for the Wardley evolution assessment tool."""
+    context: str = Field(description="The value chain or domain being assessed")
+    components: list[WardleyComponent] = Field(
+        description="All components with their evolution stage assessments"
+    )
+    stage_distribution: dict[str, int] = Field(
+        description="Count of components per evolution stage"
+    )
+    strategic_summary: str = Field(
+        description="Overall strategic picture based on component evolution"
+    )
+    build_vs_buy_recommendations: list[str] = Field(
+        description="Which components to build vs. buy/outsource"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Initiative Scoper (Phase 3)
+# ---------------------------------------------------------------------------
+
+class Initiative(BaseModel):
+    """A single initiative broken down from a strategic goal."""
+    name: str = Field(description="Initiative name")
+    description: str = Field(description="What this initiative delivers")
+    priority: Literal["P0 — Must have", "P1 — Should have", "P2 — Nice to have"] = Field(
+        description="Priority level"
+    )
+    estimated_effort: str = Field(description="Rough effort estimate (e.g., '2-3 weeks', '1 sprint')")
+    dependencies: list[str] = Field(
+        description="Other initiatives this depends on (by name)",
+        default_factory=list,
+    )
+    success_criteria: str = Field(description="How to know this initiative is done and successful")
+
+
+class InitiativeScoperOutput(BaseToolOutput):
+    """Output for the initiative scoper tool."""
+    strategic_goal: str = Field(description="The original strategic goal")
+    initiatives: list[Initiative] = Field(
+        description="Broken-down initiatives with dependencies"
+    )
+    recommended_sequence: list[str] = Field(
+        description="Suggested execution order based on dependencies and priority"
+    )
+    total_estimated_effort: str = Field(
+        description="Total effort estimate across all initiatives"
+    )
+    critical_path: list[str] = Field(
+        description="The sequence of dependent initiatives that determines minimum timeline"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Hypothesis Builder (Phase 3)
+# ---------------------------------------------------------------------------
+
+class ProductHypothesis(BaseModel):
+    """A structured, testable product hypothesis."""
+    hypothesis_statement: str = Field(
+        description="The full hypothesis in 'We believe that [action] will [outcome] for [user]' format"
+    )
+    assumption_being_tested: str = Field(
+        description="The core assumption this hypothesis validates"
+    )
+    independent_variable: str = Field(description="What you're changing/testing")
+    dependent_variable: str = Field(description="What you're measuring")
+    target_user: str = Field(description="Who this hypothesis is about")
+    success_metric: str = Field(description="How to measure success")
+    success_threshold: str = Field(description="What 'good enough' looks like (the bar to clear)")
+    suggested_test_method: str = Field(
+        description="How to test this hypothesis (e.g., A/B test, prototype, interview)"
+    )
+    estimated_test_duration: str = Field(description="How long the test should run")
+    risk_if_wrong: str = Field(description="What happens if this hypothesis is false")
+
+
+class HypothesisBuilderOutput(BaseToolOutput):
+    """Output for the hypothesis builder tool."""
+    hypotheses: list[ProductHypothesis] = Field(
+        description="Structured, testable hypotheses"
+    )
+    testing_priority: list[str] = Field(
+        description="Which hypotheses to test first and why"
+    )
+    experiment_design_notes: str = Field(
+        description="General guidance on running these experiments"
+    )
+
+
+# ---------------------------------------------------------------------------
+# Decision Log Entry (Phase 3)
+# ---------------------------------------------------------------------------
+
+class DecisionLogEntryOutput(BaseToolOutput):
+    """Output for the decision log entry tool."""
+    decision_title: str = Field(description="Short, clear title for the decision")
+    decision_date: str = Field(description="When the decision was made")
+    decision_maker: str = Field(description="Who made the decision")
+    status: Literal["Decided", "Revisiting", "Superseded"] = Field(
+        description="Current status of this decision"
+    )
+    context: str = Field(description="Why this decision needed to be made")
+    decision: str = Field(description="What was decided")
+    alternatives_considered: list[str] = Field(
+        description="Other options that were evaluated"
+    )
+    rationale: str = Field(description="Why this option was chosen over alternatives")
+    consequences: list[str] = Field(
+        description="Expected consequences (positive and negative)"
+    )
+    revisit_conditions: list[str] = Field(
+        description="Conditions that would trigger revisiting this decision"
+    )

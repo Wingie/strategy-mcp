@@ -7,7 +7,7 @@ using structured frameworks that turn hand-wavy strategy into concrete analysis.
 from typing import Annotated
 from pydantic import Field
 
-from server import mcp
+from app import mcp
 from schemas.models import (
     BmcComponentAssessment,
     BusinessModelReviewOutput,

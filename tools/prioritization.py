@@ -7,7 +7,7 @@ A widely-used prioritization framework that turns gut feelings into comparable s
 from typing import Annotated
 from pydantic import Field
 
-from server import mcp
+from app import mcp
 from schemas.models import RiceScoreOutput
 
 

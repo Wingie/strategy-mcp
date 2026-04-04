@@ -7,7 +7,7 @@ and understand what users are actually trying to accomplish.
 from typing import Annotated
 from pydantic import Field
 
-from server import mcp
+from app import mcp
 from schemas.models import (
     AssumptionInput,
     AssumptionResult,

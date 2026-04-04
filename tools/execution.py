@@ -7,8 +7,8 @@ with measurable outcomes and clear accountability.
 from typing import Annotated
 from pydantic import Field
 
-from server import mcp
-from schemas.models import KeyResult, OkrGeneratorOutput
+from app import mcp
+from schemas.models import KeyResult, OkrGeneratorOutput, Initiative, InitiativeScoperOutput
 
 
 # ---------------------------------------------------------------------------
@@ -81,7 +81,6 @@ def _generate_key_results(
 
     # If fewer than 3 KRs from metrics, generate contextual ones
     if len(key_results) < 3:
-        context_lower = context.lower()
         goal_lower = goal.lower()
 
         # Product/growth focused KRs
@@ -180,7 +179,6 @@ def _generate_key_results(
                     rationale="External validation prevents building in a vacuum.",
                 ),
             ]
-            idx = len(key_results) - 3  # Will be negative, wrapping to grab fallbacks
             key_results.append(fallback_krs[len(key_results) % len(fallback_krs)])
 
     return key_results[:5]
@@ -335,6 +333,265 @@ def okr_generator(
         key_results=key_results,
         time_horizon=time_horizon,
         alignment_notes=alignment_notes,
+        analysis=analysis,
+        next_steps=next_steps,
+        confidence=conf,
+        confidence_rationale=conf_rationale,
+        pressure_test_questions=questions,
+    )
+
+    return output.model_dump_json(indent=2)
+
+
+# ---------------------------------------------------------------------------
+# Initiative Scoper
+# ---------------------------------------------------------------------------
+
+@mcp.tool
+def initiative_scoper(
+    strategic_goal: Annotated[str, Field(
+        description="The strategic goal to break down (e.g., 'Launch AI-powered analytics dashboard for enterprise customers')"
+    )],
+    time_horizon: Annotated[str, Field(
+        description="Available time for execution (e.g., 'Q2 2026', '8 weeks', '90 days')"
+    )],
+    team_size: Annotated[int, Field(
+        description="Number of people available to work on this (e.g., 3)",
+        ge=1,
+    )],
+    constraints: Annotated[list[str], Field(
+        description="Known constraints or limitations (e.g., ['No backend engineer until April', 'Must use existing auth system', 'Budget limited to $5K/month'])"
+    )],
+    known_dependencies: Annotated[list[str], Field(
+        description="Known external dependencies (e.g., ['API access from partner', 'Design system update', 'Legal review for data handling']). Pass empty [] if none."
+    )],
+) -> str:
+    """Break a strategic goal into scoped initiatives with dependencies.
+
+    Takes a high-level goal and decomposes it into concrete initiatives,
+    each with effort estimates, priorities, dependencies, and success criteria.
+    Identifies the critical path and recommended execution sequence.
+    """
+
+    goal_lower = strategic_goal.lower()
+
+    # Generate initiatives based on goal analysis
+    initiatives: list[Initiative] = []
+
+    # Discovery/research initiative (almost always needed)
+    initiatives.append(Initiative(
+        name="Discovery & Requirements",
+        description=f"Validate assumptions, define detailed requirements, and map user needs for: {strategic_goal}",
+        priority="P0 — Must have",
+        estimated_effort="1-2 weeks",
+        dependencies=[],
+        success_criteria="Clear requirements document, validated user needs, and aligned team on scope.",
+    ))
+
+    # Technical foundation
+    needs_tech_setup = any(w in goal_lower for w in ("build", "launch", "develop", "create", "implement", "platform", "product", "app", "dashboard", "system"))
+    if needs_tech_setup:
+        initiatives.append(Initiative(
+            name="Technical Architecture & Setup",
+            description="Design the technical architecture, set up infrastructure, and establish development workflow.",
+            priority="P0 — Must have",
+            estimated_effort="1-2 weeks",
+            dependencies=["Discovery & Requirements"],
+            success_criteria="Architecture documented, dev environment running, CI/CD pipeline configured.",
+        ))
+
+    # Core build
+    core_deps = ["Discovery & Requirements", "Technical Architecture & Setup"] if needs_tech_setup else ["Discovery & Requirements"]
+    initiatives.append(Initiative(
+        name="Core Feature Build",
+        description=f"Build the minimum viable version that delivers the core value: {strategic_goal}",
+        priority="P0 — Must have",
+        estimated_effort=f"{'3-4 weeks' if team_size <= 2 else '2-3 weeks'}",
+        dependencies=core_deps,
+        success_criteria="Core functionality working end-to-end, passing basic QA, and ready for internal testing.",
+    ))
+
+    # Integration initiative if relevant
+    if any(w in goal_lower for w in ("integrat", "api", "connect", "sync", "partner")):
+        initiatives.append(Initiative(
+            name="Integration Development",
+            description="Build and test integrations with external systems or APIs.",
+            priority="P0 — Must have",
+            estimated_effort="1-2 weeks",
+            dependencies=["Core Feature Build"],
+            success_criteria="All required integrations working with error handling and retry logic.",
+        ))
+
+    # Testing & QA
+    initiatives.append(Initiative(
+        name="Testing & Quality Assurance",
+        description="Comprehensive testing including edge cases, performance, and user acceptance testing.",
+        priority="P0 — Must have",
+        estimated_effort="1-2 weeks",
+        dependencies=["Core Feature Build"],
+        success_criteria="All critical paths tested, no P0 bugs, performance meets targets.",
+    ))
+
+    # Go-to-market if launching
+    if any(w in goal_lower for w in ("launch", "release", "ship", "go live", "beta", "customers", "users")):
+        initiatives.append(Initiative(
+            name="Go-to-Market Preparation",
+            description="Prepare launch materials: documentation, marketing assets, support processes, and onboarding flows.",
+            priority="P1 — Should have",
+            estimated_effort="1-2 weeks",
+            dependencies=["Core Feature Build"],
+            success_criteria="Landing page live, onboarding flow tested, support documentation complete.",
+        ))
+
+    # Analytics & monitoring
+    if any(w in goal_lower for w in ("analytics", "metric", "data", "dashboard", "monitor")):
+        initiatives.append(Initiative(
+            name="Analytics & Monitoring Setup",
+            description="Implement tracking, dashboards, and alerting to measure success post-launch.",
+            priority="P1 — Should have",
+            estimated_effort="1 week",
+            dependencies=["Core Feature Build"],
+            success_criteria="Key metrics tracked, dashboards accessible, alerts configured for critical thresholds.",
+        ))
+
+    # Add constraint-driven initiatives
+    for dep in known_dependencies:
+        if dep.strip():
+            initiatives.append(Initiative(
+                name=f"Resolve: {dep.strip()}",
+                description=f"Address external dependency: {dep.strip()}. This must be resolved before dependent work can proceed.",
+                priority="P0 — Must have",
+                estimated_effort="Varies — depends on external party",
+                dependencies=[],
+                success_criteria=f"'{dep.strip()}' is fully resolved and unblocking downstream work.",
+            ))
+
+    # Polish/enhancement initiative
+    initiatives.append(Initiative(
+        name="Polish & Enhancement Pass",
+        description="UX improvements, performance optimization, and addressing feedback from testing.",
+        priority="P2 — Nice to have",
+        estimated_effort="1 week",
+        dependencies=["Testing & Quality Assurance"],
+        success_criteria="Top 5 feedback items addressed, UX reviewed and polished.",
+    ))
+
+    # Build recommended sequence (topological sort-ish by dependencies and priority)
+    completed: set[str] = set()
+    sequence: list[str] = []
+    remaining = list(initiatives)
+
+    while remaining:
+        # Find initiatives whose dependencies are all completed
+        ready = [i for i in remaining if all(d in completed for d in i.dependencies)]
+        if not ready:
+            # Circular dependency or missing dep — add remaining by priority
+            ready = sorted(remaining, key=lambda x: x.priority)
+
+        # Sort ready items by priority
+        priority_order = {"P0 — Must have": 0, "P1 — Should have": 1, "P2 — Nice to have": 2}
+        ready.sort(key=lambda x: priority_order.get(x.priority, 3))
+
+        next_init = ready[0]
+        sequence.append(next_init.name)
+        completed.add(next_init.name)
+        remaining.remove(next_init)
+
+    # Critical path: longest chain of P0 dependencies
+    critical_path = [i.name for i in initiatives if i.priority == "P0 — Must have"]
+
+    # Total effort estimate
+    effort_weeks_low = 0
+    effort_weeks_high = 0
+    for init in initiatives:
+        effort_str = init.estimated_effort.lower()
+        if "varies" in effort_str:
+            effort_weeks_low += 1
+            effort_weeks_high += 3
+        elif "-" in effort_str:
+            parts = effort_str.split("-")
+            try:
+                effort_weeks_low += int(parts[0].strip().split()[0])
+                effort_weeks_high += int(parts[1].strip().split()[0])
+            except (ValueError, IndexError):
+                effort_weeks_low += 1
+                effort_weeks_high += 2
+        elif "week" in effort_str:
+            try:
+                num = int(effort_str.split()[0])
+                effort_weeks_low += num
+                effort_weeks_high += num
+            except (ValueError, IndexError):
+                effort_weeks_low += 1
+                effort_weeks_high += 2
+        else:
+            effort_weeks_low += 1
+            effort_weeks_high += 2
+
+    # Parallelization factor
+    parallel_factor = min(team_size, 3)  # Realistically, max 3 parallel streams
+    calendar_weeks_low = max(effort_weeks_low // parallel_factor, effort_weeks_low // 2)
+    calendar_weeks_high = max(effort_weeks_high // parallel_factor, effort_weeks_high // 2)
+
+    total_effort = (
+        f"{effort_weeks_low}-{effort_weeks_high} person-weeks of effort. "
+        f"With {team_size} people and some parallelization, "
+        f"expect ~{calendar_weeks_low}-{calendar_weeks_high} calendar weeks."
+    )
+
+    # Analysis
+    p0_count = sum(1 for i in initiatives if "P0" in i.priority)
+    analysis = (
+        f"Broke **'{strategic_goal}'** into **{len(initiatives)} initiatives**.\n\n"
+        f"- **P0 (Must have):** {p0_count} initiatives\n"
+        f"- **P1 (Should have):** {sum(1 for i in initiatives if 'P1' in i.priority)}\n"
+        f"- **P2 (Nice to have):** {sum(1 for i in initiatives if 'P2' in i.priority)}\n\n"
+        f"**Total effort:** {total_effort}\n"
+        f"**Team size:** {team_size}\n"
+        f"**Time horizon:** {time_horizon}\n"
+    )
+
+    if constraints:
+        analysis += f"\n**Constraints:** {'; '.join(constraints)}"
+
+    # Next steps
+    next_steps = [
+        "Review and adjust the initiative breakdown with your team — add, remove, or re-scope as needed.",
+        f"Start with '{sequence[0]}' immediately — it unblocks everything else.",
+    ]
+    if len(constraints) > 0:
+        next_steps.append("Address constraints early — each unresolved constraint is a risk to the timeline.")
+    next_steps.append("Set up a weekly check-in against this plan to track progress and catch slippage early.")
+    next_steps.append("Identify owners for each initiative — unowned work doesn't get done.")
+    next_steps = next_steps[:5]
+
+    # Confidence
+    if len(constraints) <= 2 and len(known_dependencies) <= 1:
+        conf = "High"
+        conf_rationale = "Manageable constraints and dependencies — this breakdown is likely achievable."
+    elif len(constraints) <= 4:
+        conf = "Medium"
+        conf_rationale = "Multiple constraints may impact timeline — build in buffer."
+    else:
+        conf = "Low"
+        conf_rationale = "Many constraints and dependencies increase risk of delays. Simplify scope if possible."
+
+    # Pressure-test questions
+    questions = [
+        "Is the scope realistic for the time horizon and team size? What would you cut if you had half the time?",
+        "Are there hidden dependencies not listed here? (Stakeholder approvals, vendor contracts, hiring needs?)",
+    ]
+    if team_size <= 2:
+        questions.append(f"With only {team_size} people, are there initiatives that should be deferred to a later phase?")
+    else:
+        questions.append("Does the team have the right skills for every initiative, or are there capability gaps?")
+
+    output = InitiativeScoperOutput(
+        strategic_goal=strategic_goal,
+        initiatives=initiatives,
+        recommended_sequence=sequence,
+        total_estimated_effort=total_effort,
+        critical_path=critical_path,
         analysis=analysis,
         next_steps=next_steps,
         confidence=conf,
