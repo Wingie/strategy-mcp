@@ -8,6 +8,7 @@ requires-python = ">=3.11"
 authors = [
     { name = "Sohaib Thiab", email = "sohaib.thiab@gmail.com" }
 ]
+keywords = ["mcp", "strategy", "product-management", "rice", "okr", "jtbd", "competitive-analysis", "ai-tools", "fastmcp"]
 dependencies = [
     "fastmcp>=2.0.0",
     "pydantic>=2.0.0",
@@ -17,6 +18,11 @@ dependencies = [
 dev = [
     "pytest>=8.0.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/sohaibt/strategy-mcp"
+Repository = "https://github.com/sohaibt/strategy-mcp"
+Issues = "https://github.com/sohaibt/strategy-mcp/issues"
 
 [tool.hatch.build.targets.wheel]
 packages = ["tools", "schemas"]

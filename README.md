@@ -4,6 +4,7 @@
 
 Give any MCP-compatible AI assistant — Claude Code, Cursor, Cline — instant access to 12 structured strategy frameworks. Not templates. Not prompts. Actual tools that accept your inputs, apply the framework, show the reasoning, and return specific next steps.
 
+[![PyPI version](https://img.shields.io/pypi/v/strategy-mcp.svg)](https://pypi.org/project/strategy-mcp/)
 [![Built with FastMCP](https://img.shields.io/badge/Built%20with-FastMCP-blue)](https://github.com/jlowin/fastmcp)
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-green)](https://python.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -31,10 +32,12 @@ Built by [Sohaib Thiab](https://sohaibthiab.me) — former CPO, now building AI 
 
 ## Install in 60 seconds
 
+strategy-mcp is published on [PyPI](https://pypi.org/project/strategy-mcp/) — install it with a single command.
+
 ### Claude Code
 
 ```bash
-claude mcp add strategy-mcp -- uv run --with strategy-mcp@git+https://github.com/sohaibt/strategy-mcp python server.py
+claude mcp add strategy-mcp -- uv run --with strategy-mcp python server.py
 ```
 
 ### Cursor
@@ -46,7 +49,7 @@ Add to your Cursor MCP settings (`.cursor/mcp.json`):
   "mcpServers": {
     "strategy-mcp": {
       "command": "uv",
-      "args": ["run", "--with", "strategy-mcp@git+https://github.com/sohaibt/strategy-mcp", "python", "server.py"]
+      "args": ["run", "--with", "strategy-mcp", "python", "server.py"]
     }
   }
 }
@@ -61,10 +64,16 @@ Add to your Cline MCP settings:
   "mcpServers": {
     "strategy-mcp": {
       "command": "uv",
-      "args": ["run", "--with", "strategy-mcp@git+https://github.com/sohaibt/strategy-mcp", "python", "server.py"]
+      "args": ["run", "--with", "strategy-mcp", "python", "server.py"]
     }
   }
 }
+```
+
+### Plain pip
+
+```bash
+pip install strategy-mcp
 ```
 
 ### Run locally (development)
